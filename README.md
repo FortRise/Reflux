@@ -1,5 +1,7 @@
 # Reflux
 
+[![Version](https://img.shields.io/nuget/v/Reflux.svg?style=flat-square)](https://www.nuget.org/packages/Reflux/)
+
 A simple Harmony-like patching library using [MonoMod.RuntimeDetour](https://github.com/MonoMod/MonoMod).
 
 A goal of this project is to almost mimic how Harmony patches the methods, though some features might not be added due to
