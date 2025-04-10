@@ -3,38 +3,37 @@ using RefluxLibrary;
 
 var reflux = new Reflux();
 
-// reflux.Patch(typeof(MakeMePatch).GetMethod("ToPatchWith")!, prefix: ToPatchWith_Prefix_Another);
-reflux.Patch(typeof(MakeMePatch).GetMethod("ToPatchWith")!, prefix: ToPatchWith_Prefix, postfix: ToPatchWith_Postfix, finalizer: ToPatchWith_Finalizer);
+reflux.Patch(
+    typeof(MakeMePatch).GetMethod("Add")!,
+    prefix: [Add_Prefix],
+    postfix: [Add_Postfix],
+    finalizer: [Add_Finalizer]
+);
 
 var patching = new MakeMePatch();
 patching.ToPatchWith("OKKK");
 MakeMePatch.SomeStatic();
 Console.WriteLine(patching.Add(4, 2));
 
+Reflux.Dump(typeof(MakeMePatch).GetMethod("Add")!);
 
-// static void ToPatchWith_Prefix_Another(ref string name, MakeMePatch __instance) 
-// {
-//     name = "Will do";
-// }
-
-static bool ToPatchWith_Prefix(ref string name, MakeMePatch __instance) 
+static void Add_Prefix(int a, int b)
 {
-    if (name == "OKKK")
+    Console.WriteLine($"{a} + {b}");
+}
+
+static void Add_Postfix(in int __result)
+{
+    Console.WriteLine($"The results are: {__result}");
+}
+
+static Exception? Add_Finalizer(ref int __result, ref Exception __exception)
+{
+    if (__exception == null)
     {
-        return true;
+        Console.WriteLine("There were no errors in this results.");
     }
-    Console.WriteLine(name);
-    return false;
-}
-
-static void ToPatchWith_Postfix(ref string name, MakeMePatch __instance) 
-{
-    Console.WriteLine("Postfix called!");
-}
-
-static void ToPatchWith_Finalizer(Exception __exception) 
-{
-    Console.WriteLine(__exception);
+    return __exception;
 }
 
 

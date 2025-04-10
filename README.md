@@ -15,3 +15,6 @@ lack of interest with it.
 
 ## Things will not do
 + [ ] Transpilers
+
+Some additional credits:
++ [CelesteMappingUtils](https://github.com/JaThePlayer/CelesteMappingUtils) - On MethodDiff for IL dumping.
