@@ -34,7 +34,7 @@ static void ToPatchWith_Postfix(ref string name, MakeMePatch __instance)
 
 static void ToPatchWith_Finalizer(Exception __exception) 
 {
-
+    Console.WriteLine(__exception);
 }
 
 

@@ -8,7 +8,7 @@ lack of interest with it.
 ## Roadmap
 + [x] Prefixes
 + [x] Postfixes
-+ [ ] Finalizers
++ [x] Finalizers
 + [ ] Reverse Patchers
 
 ## Things will not do

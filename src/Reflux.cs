@@ -5,7 +5,6 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using MonoMod.Utils;
-using MonoMod.Utils.Cil;
 
 namespace RefluxLibrary;
 
@@ -89,14 +88,13 @@ public class HookProcessor
             WritePostfix(postfix);
         }
 
-        // I can't seem to do this yet, it feels bugged
         // reset position
-        // cursor.GotoLabel(label);
+        cursor.GotoLabel(label);
 
-        // if (finalizer != null)
-        // {
-        //     WriteFinalizer(finalizer, retLabel);
-        // }
+        if (finalizer != null)
+        {
+            WriteFinalizer(finalizer, retLabel);
+        }
     }
 
     private void WritePrefix(Delegate prefix, ILLabel retLabel)
@@ -211,19 +209,25 @@ public class HookProcessor
         var cException = new VariableDefinition(type);
         cursor.IL.Body.Variables.Add(cException);
 
+        var exceptionHandler = new ExceptionHandler(ExceptionHandlerType.Catch);
+        cursor.IL.Body.ExceptionHandlers.Insert(0, exceptionHandler);
+
+        exceptionHandler.CatchType = cursor.IL.Import(typeof(Exception));
+        cursor.EmitNop();
+        exceptionHandler.TryStart = cursor.Next;
+
         cursor.Index = cursor.Instrs.Count - 1;
 
         var leaveBlock = cursor.DefineLabel();
 
         VariableDefinition? retVal = null;
 
-        Instruction instr;
-
         if (postfix.Method.ReturnType == typeof(void))
         {
             cursor.Emit(OpCodes.Leave, leaveBlock);
-            instr = cursor.IL.Create(OpCodes.Stloc, cException);
-            cursor.IL.Append(instr);
+            cursor.Emit(OpCodes.Stloc, cException);
+            exceptionHandler.TryEnd = cursor.Prev;
+            exceptionHandler.HandlerStart = cursor.Prev;
 
             for (int i = 0; i < parameters.Count; i++)
             {
@@ -256,8 +260,9 @@ public class HookProcessor
             cursor.IL.Body.Variables.Add(retVal);
 
             cursor.Emit(OpCodes.Leave, leaveBlock);
-            instr = cursor.IL.Create(OpCodes.Stloc, cException);
-            cursor.IL.Append(instr);
+            cursor.Emit(OpCodes.Stloc, cException);
+            exceptionHandler.TryEnd = cursor.Prev;
+            exceptionHandler.HandlerStart = cursor.Prev;
 
             for (int i = 0; i < parameters.Count; i++)
             {
@@ -300,26 +305,14 @@ public class HookProcessor
 
         cursor.Emit(OpCodes.Call, postfix.Method);
         cursor.Emit(OpCodes.Leave, leaveBlock);
-
+        cursor.Emit(OpCodes.Nop);
+        exceptionHandler.HandlerEnd = cursor.Prev;
+        leaveBlock.Target = cursor.Prev;
 
         if (retVal != null)
         {
             cursor.Emit(OpCodes.Ldloc, retVal);
-            cursor.MarkLabel(leaveBlock);
         }
-        else 
-        {
-            cursor.MarkLabel(leaveBlock);
-        }
-
-        cursor.IL.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch) 
-        {
-            TryStart = cursor.Instrs[0],
-            TryEnd = instr,
-            HandlerStart = instr,
-            HandlerEnd = leaveBlock.Target,
-            CatchType = cursor.IL.Import(typeof(Exception))
-        });
     }
 
     private List<ParameterArgument> CompareAndBuildParameter(MethodInfo info)
